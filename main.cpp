@@ -77,10 +77,9 @@ bool flag[7] = {false,
 
     
 
-
 //Variables Globales
 
-int SECTION_HORIZON;
+int SECTION_HORIZON = 0;
 vector<staff> workers;
 vector<shift> turnos;
 vector<days_off> libres;
@@ -263,6 +262,69 @@ void addCover(cover* section,string s, string del = "")
     cubrir.push_back(*section);
 }
 
+int random_num(int start, int end) 
+{
+    int range = (end - start) + 1;
+    int random_int = start + (rand()%range);
+    return random_int;
+}
+
+void initMatrix(int** MATRIX, int row,int SECTION_HORIZON)
+{
+    for(int i = 0; i<row;i++){
+        for(int j = 0; j<SECTION_HORIZON ; j++){
+            int randNum = random_num(0,1);
+            
+            MATRIX[i][j] = randNum;
+            if(j + 1 == SECTION_HORIZON){
+                cout<<randNum<<"\n";
+            }
+            else{
+                cout<<randNum<<" ";
+            }            
+        }
+    }
+}
+
+void initShiftPerWorker(int** ShiftsPerWorker , int Cantidad_empleados,int turnos_max){
+    for(int i = 0; i< Cantidad_empleados ; i++){
+        for(int j = 0; j< turnos_max ; j++){
+            ShiftsPerWorker[i][j] = 0;
+        }
+    }
+
+}
+
+void sumOfShift(int** MATRIX, int** ShiftsPerWorker,int row, int SECTION_HORIZON)
+{
+    cout<<row<<" Cantidad de empleados "<<"\n";
+    for(int i = 0; i<row ; i++)
+    {
+        for(int j = 0 ; j<SECTION_HORIZON ; j ++)
+        {
+            int tipo_turno = MATRIX[i][j];
+            
+            if(tipo_turno != 0){
+                
+                ShiftsPerWorker[i][tipo_turno] = ShiftsPerWorker[i][tipo_turno] + 1;
+            } 
+            if(j +1 == SECTION_HORIZON){
+                cout<<ShiftsPerWorker[i][1]<<"\n";
+            }
+            
+
+        }
+        
+    }
+    
+}
+
+
+
+
+
+
+
 
 int main()
 {
@@ -275,7 +337,7 @@ int main()
     workers.push_back(new staff());
     */
     ifstream fileStream;
-    fileStream.open("nsp_instancias/instances1_24/Instance2.txt");
+    fileStream.open("nsp_instancias/instances1_24/Instance1.txt");
     if(fileStream.is_open()){
 
         cout<<"Abierto\n";
@@ -296,7 +358,7 @@ int main()
                     switch (flags)
                     {
                     case 0:
-                        cout<<line;
+                    
                         SECTION_HORIZON = stoi(line);
 
                     break;
@@ -304,7 +366,8 @@ int main()
                     {
                         shift* aux = new shift();                  
                         //tokenize(line,",");
-                        addShift(aux,line,",");                       
+                        addShift(aux,line,",");
+                        cout<<turnos.size()<<"\n";                      
                                                
                     }
                     break;
@@ -367,15 +430,35 @@ int main()
         vector<shift_off_request> off_request;
         vector<cover> cubrir;
         */
-        cout<< libres.back().DayIndexes<<'\n';
-        cout<<on_request.back().ShiftID<<'\n';
-        cout<<off_request.back().ShiftID<<'\n';
-        cout<<cubrir.back().ShiftID<<'\n';
+        
         fileStream.close();
     
     }else{
         cout<<"Cerrado";
     }
+    int turnos_max = 1;//cantidad maxima de turnos
+    int turnos_min = 0;//cantidad minima de turnos
+    int Cantidad_empleados = workers.size();
+    int randNum = rand()%(turnos_max-turnos_min + 1) + turnos_min;
+    //Se inicializa la matriz de decision
+    //se inicializa la matriz de turnos por worker
 
-    
+    int** MATRIX          = new int*[Cantidad_empleados];
+    int** ShiftsPerWorker = new int*[Cantidad_empleados];
+    for(int i=0; i<Cantidad_empleados; i++)
+    {
+        MATRIX[i]          = new int[SECTION_HORIZON];
+        ShiftsPerWorker[i] = new int[turnos_max + 1];//en vez de 1, cantidad de turnos
+    }
+    //Inicializa la matriz de desicion de manera aleatoria
+    initMatrix(MATRIX,Cantidad_empleados,SECTION_HORIZON);
+
+    //se inicializa la matriz de cantidad de turnos
+    initShiftPerWorker(ShiftsPerWorker,Cantidad_empleados,turnos_max + 1);
+
+    //re inicializar en cada iteracion
+    //while(iterations < MaxIterations)
+
+    sumOfShift(MATRIX,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON);
+
 }
