@@ -8,7 +8,7 @@ using namespace std;
 
 struct staff{
     string ID;
-    string MaxShifts;
+    vector<string> MaxShifts;
     int MaxTotalMinutes;
     int MinTotalMinutes;
     int MaxConsecutiveShifts;
@@ -127,6 +127,25 @@ void addShift(shift* shift,string s, string del = " "){
 
 }
 
+vector<string> maxshift(string s, string del = " "){
+    vector<string> shiftType;
+    int start = 0;
+    int end = s.find(del);
+    int aux = 0;
+    while (end != -1) {
+        
+        if(aux == 0){;
+        }
+        aux++;
+        start = end + del.size();
+        end = s.find(del, start);     
+    }
+    shiftType.push_back(s.substr(start, end - start));
+    return shiftType;
+    
+
+}
+
 void addStaff(staff* staff,string s, string del = " "){
     int start = 0;
     int end = s.find(del);
@@ -137,7 +156,7 @@ void addStaff(staff* staff,string s, string del = " "){
             staff->ID = s.substr(start, end - start);
         }
         else if(aux == 1){
-            staff->MaxShifts = s.substr(start, end - start);
+            staff->MaxShifts = maxshift(s.substr(start, end - start),"=");
         }
         else if(aux == 2){
             staff->MaxTotalMinutes = stoi(s.substr(start, end - start));
@@ -295,7 +314,7 @@ void initShiftPerWorker(int** ShiftsPerWorker , int Cantidad_empleados,int turno
 
 }
 
-void sumOfShift(int** MATRIX, int** ShiftsPerWorker,int row, int SECTION_HORIZON)
+void sumOfShift(int** MATRIX, int** ShiftsPerWorker,int row, int SECTION_HORIZON,int turnos_max,vector<staff> workers)
 {
     cout<<row<<" Cantidad de empleados "<<"\n";
     for(int i = 0; i<row ; i++)
@@ -310,18 +329,22 @@ void sumOfShift(int** MATRIX, int** ShiftsPerWorker,int row, int SECTION_HORIZON
             } 
             if(j +1 == SECTION_HORIZON){
                 cout<<ShiftsPerWorker[i][1]<<"\n";
+                for(int turno = 1; turno < turnos_max ; turno++){
+                    int turnos_maximos = stoi(workers[i].MaxShifts[turno-1]);
+                    cout<<turnos_maximos<<" TURNOS" << "\n";
+                    if(ShiftsPerWorker[i][turno] > turnos_maximos){
+                        cout<<"Solucion No factible, añadiendo 30 de peso"<<"\n";
+                    }else{
+                        cout<<"Trabajador dentro del limite de turnos maximo"<<"\n";
+                    }
+                    
+                }
             }
             
 
-        }
-        
+        }   
     }
-    
 }
-
-
-
-
 
 
 
@@ -436,8 +459,8 @@ int main()
     }else{
         cout<<"Cerrado";
     }
-    int turnos_max = 1;//cantidad maxima de turnos
-    int turnos_min = 0;//cantidad minima de turnos
+    int turnos_max = 1;//cantidad de diferentes turnos
+    int turnos_min = 0;//turno 0 = no trabaja
     int Cantidad_empleados = workers.size();
     int randNum = rand()%(turnos_max-turnos_min + 1) + turnos_min;
     //Se inicializa la matriz de decision
@@ -455,10 +478,9 @@ int main()
 
     //se inicializa la matriz de cantidad de turnos
     initShiftPerWorker(ShiftsPerWorker,Cantidad_empleados,turnos_max + 1);
-
     //re inicializar en cada iteracion
     //while(iterations < MaxIterations)
 
-    sumOfShift(MATRIX,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON);
+    sumOfShift(MATRIX,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON,turnos_max + 1,workers);
 
-}
+}   
