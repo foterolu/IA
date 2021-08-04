@@ -3,6 +3,7 @@
 #include <iostream>
 #include <bits/stdc++.h>
 #include <vector>
+#include <cmath>
 using namespace std;
 
 
@@ -22,7 +23,7 @@ struct staff{
 struct shift{
     string ShiftID;
     int mins;
-    string cant_follow; //se debe parsear;
+    vector <string> cant_follow; //se debe parsear;
 };
 
 struct days_off{
@@ -105,6 +106,22 @@ void tokenize(string s, string del = " ")
     cout << s.substr(start, end - start);
 }
 
+vector<string> cantFollow(string s, string del = " "){
+    vector<string> cFollow;
+    int start = 0;
+    int end = s.find(del);
+    int aux = 0;
+    while (end != -1) {
+        cFollow.push_back(s.substr(start, end - start));
+        aux++;
+        start = end + del.size();
+        end = s.find(del, start);     
+    }
+    string aux2 = s.substr(start, end - start);
+    cFollow.push_back(aux2); //cuando no calce queda vacio;
+    return cFollow;
+}
+
 void addShift(shift* shift,string s, string del = " ")
 {
     int start = 0;
@@ -117,13 +134,13 @@ void addShift(shift* shift,string s, string del = " ")
         }
         else if(aux == 1){
             shift->mins = stoi(s.substr(start, end - start));//tokenizar
-            cout<<shift->mins<<"\n";
+            
         }
         aux++;
         start = end + del.size();
         end = s.find(del, start);     
     }
-    shift->cant_follow = s.substr(start, end - start);  
+    shift->cant_follow = cantFollow(s.substr(start, end - start),"|");  
     turnos.push_back(*shift);
 
 
@@ -361,7 +378,6 @@ void initShiftPerWorker(int** ShiftsPerWorker , int Cantidad_empleados,int turno
 int sumOfShift(int** MATRIX, int** sum_ofshift,int** ShiftsPerWorker,int cantidad_empleados, int SECTION_HORIZON,int turnos_max,vector<staff> shifts)
 {
     int score = 0;
-    cout<<cantidad_empleados<<" Cantidad de empleados "<<"\n";
     for(int i = 0; i<cantidad_empleados ; i++)
     {
         for(int j = 0 ; j<SECTION_HORIZON ; j ++)
@@ -383,7 +399,6 @@ int sumOfShift(int** MATRIX, int** sum_ofshift,int** ShiftsPerWorker,int cantida
 
                     
                     if(ShiftsPerWorker[i][turno] > turnos_maximos){
-                        
                         score =score - 10;
                         
                     }else{
@@ -402,6 +417,7 @@ int ShiftTimesSum(int** sum_ofshift, vector<staff> workers,int Cantidad_empleado
     int score = 0;
     for(int i = 0; i<Cantidad_empleados;i++){
         int suma = 0;
+    
         for(int turno = 1; turno < turnos_max ; turno++){  //parte en 1 porque el turno 0 no se cuenta 
             
             suma = suma + sum_ofshift[i][turno]*shifts[turno-1].mins;
@@ -409,9 +425,7 @@ int ShiftTimesSum(int** sum_ofshift, vector<staff> workers,int Cantidad_empleado
             
         }
         if(suma > workers[i].MaxTotalMinutes )
-            {   
-                
-                
+            {                   
                 score =score - 10;
                 
             }
@@ -500,7 +514,7 @@ int MustDayoff(int** MATRIX, vector<days_off> libres,int Cantidad_empleados,int 
            for(int w = 0 ; w<libres[i].DayIndexes.size(); w++){
                int aux = stoi(libres[i].DayIndexes[w]);
                if(MATRIX[i][j] != 0 && j == aux){
-                   
+                
                    score-=10;
 
                }
@@ -511,11 +525,44 @@ int MustDayoff(int** MATRIX, vector<days_off> libres,int Cantidad_empleados,int 
     return score;
 }
 
+int CantFollowRestriction(int** MATRIX,vector<shift> turnos,int Cantidad_empleados,int SECTION_HORIZON ){
+    int score = 0;
+    for(int i = 0; i<Cantidad_empleados ; i++){
+        for(int j = 1; j<SECTION_HORIZON ; j++){
+            int presente = MATRIX[i][j] ;
+            int pasado = MATRIX[i][j-1] ;
+            
+            if(pasado != 0 && presente !=0){
+                for(int w = 0; w<turnos[presente-1].cant_follow.size(); w++){
+                        if(turnos[presente-1].cant_follow[w] == turnos[pasado-1].ShiftID){
+                            
+                            score -=10;
+                        }
+                    }
+            }
+        }
+    }
 
+    return score;
+}
 
+void copyMatrix(int** MATRIX, int** aux_matrix,int Cantidad_empleados,int SECTION_HORIZON){
+    for(int i = 0; i<Cantidad_empleados ; i++){
+        for(int j = 0; j<SECTION_HORIZON ; j++){
+            aux_matrix[i][j] = MATRIX[i][j];
+            
+            }
+    }
+}
 
-
-
+void emptySumOfShift(int** sum_ofshift,int Cantidad_empleados,int turnos_max){
+    for(int i = 0; i<Cantidad_empleados; i++){
+        for(int j = 0; j<turnos_max+1;j++){
+            sum_ofshift[i][j] = 0;
+           
+        }
+    }
+}
 
 int main()
 {
@@ -532,7 +579,6 @@ int main()
     if(fileStream.is_open())
     {
 
-        cout<<"Abierto\n";
         string line;
         while(getline(fileStream,line)){
             line.append("\n");
@@ -559,7 +605,7 @@ int main()
                         shift* aux = new shift();                  
                         //tokenize(line,",");
                         addShift(aux,line,",");
-                        cout<<turnos.size()<<"\n";                      
+                        cout<<turnos.back().ShiftID<<"\n";                      
                                                
                     }
                     break;
@@ -642,10 +688,12 @@ int main()
 
     int** MATRIX           = new int*[Cantidad_empleados];
     int** ShiftsPerWorker  = new int*[Cantidad_empleados];
-    int** sum_ofshift      = new int*[Cantidad_empleados]; 
+    int** sum_ofshift      = new int*[Cantidad_empleados];
+    int** aux_matrix       = new int*[Cantidad_empleados];
     for(int i=0; i<Cantidad_empleados; i++)
     {
         MATRIX[i]          = new int[SECTION_HORIZON];
+        aux_matrix[i]      = new int[SECTION_HORIZON]; 
         ShiftsPerWorker[i] = new int[turnos_max + 1];//turnos_max es cantidad de turnos sin contar el turno 0->no trabaja
         sum_ofshift[i]     = new int[turnos_max + 1];
     }
@@ -656,17 +704,90 @@ int main()
     initShiftPerWorker(ShiftsPerWorker,Cantidad_empleados,turnos_max + 1);
 
     // se define score inicial
-    int score = 0;
+    int score_final = -1*pow(10,5);
         //re inicializar en cada iteracion
         //while(iterations < MaxIterations)
+   
+   
+    //Se copia la matriz de decision
     
+    copyMatrix(MATRIX,aux_matrix,Cantidad_empleados,SECTION_HORIZON);
+    int score = 0;
+    int iterations = 100;
+    int i= 0;
+
+   
+    cout<<"\n";
+
+    score = 0;
     score +=sumOfShift(MATRIX,sum_ofshift,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON,turnos_max + 1,workers);
     score +=ShiftTimesSum(sum_ofshift,workers,Cantidad_empleados,turnos_max + 1,turnos);
     score +=maxConsecutiveShifts(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
     score +=minConsecutiveShifts(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
     score +=MaxConsecutiveWeekendWork(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
     score +=MustDayoff(MATRIX,libres,Cantidad_empleados,SECTION_HORIZON);
+    score +=CantFollowRestriction(MATRIX,turnos,Cantidad_empleados,SECTION_HORIZON);
 
-    cout<<"Score total: "<< score <<"\n";
+    cout<<score<< " SCORE SECUNDAL \n";
 
+    emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
+
+    score_final = score;
+    while(i < iterations){
+        bool flag = true;
+        for(int i = 0; i<Cantidad_empleados; i++){
+            if(flag){
+                for(int j = 0 ; j<SECTION_HORIZON ; j++){
+                    int turno = aux_matrix[i][j];
+                    if(flag){
+                        
+                        for(int w = 0; w<turnos.size() +1;w++){
+            
+                            if(turno != w){
+                                aux_matrix[i][j] = w;
+                            }
+                            score = 0;
+                            
+                            score +=sumOfShift(aux_matrix,sum_ofshift,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON,turnos_max + 1,workers);                        
+                            score +=ShiftTimesSum(sum_ofshift,workers,Cantidad_empleados,turnos_max + 1,turnos);
+                            score +=maxConsecutiveShifts(aux_matrix,workers,Cantidad_empleados,SECTION_HORIZON);
+                            score +=minConsecutiveShifts(aux_matrix,workers,Cantidad_empleados,SECTION_HORIZON);
+                            score +=MaxConsecutiveWeekendWork(aux_matrix,workers,Cantidad_empleados,SECTION_HORIZON);
+                            score +=MustDayoff(aux_matrix,libres,Cantidad_empleados,SECTION_HORIZON);
+                            score +=CantFollowRestriction(aux_matrix,turnos,Cantidad_empleados,SECTION_HORIZON);
+                            
+                            emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
+                            
+                            if(score>score_final){
+                                score_final = score;
+                            
+                                flag = false; //alguna mejora
+                                copyMatrix(aux_matrix,MATRIX,Cantidad_empleados,SECTION_HORIZON);
+                                for(int i  = 0; i<Cantidad_empleados; i++){
+                                    for(int j = 0; j<SECTION_HORIZON;j ++){
+                                        if(j + 1 ==SECTION_HORIZON){
+                                            cout<<aux_matrix[i][j]<< " \n";
+                                        }else{
+                                            cout<<aux_matrix[i][j]<< " ";
+                                        }
+                                    }
+                                }
+                                //copy(&aux_matrix[0][0], &aux_matrix[0][0]+Cantidad_empleados*SECTION_HORIZON,&MATRIX[0][0]);
+                                cout<<"Score total: "<< score_final <<"\n";
+                            }else{
+                                
+                                aux_matrix[i][j] = turno;
+                            }
+                        }
+                    }else{
+                        
+                        break;
+                    }
+                }
+            }else{
+                break;
+            }
+        }
+        i++;
+    }
 }   
