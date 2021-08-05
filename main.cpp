@@ -4,6 +4,7 @@
 #include <bits/stdc++.h>
 #include <vector>
 #include <cmath>
+#include <chrono>
 using namespace std;
 
 
@@ -399,6 +400,8 @@ int sumOfShift(int** MATRIX, int** sum_ofshift,int** ShiftsPerWorker,int cantida
 
                     
                     if(ShiftsPerWorker[i][turno] > turnos_maximos){
+                        
+                        //TAGcout<<"Turnos por trabajador vulnerado\n";
                         score =score - 10;
                         
                     }else{
@@ -424,16 +427,17 @@ int ShiftTimesSum(int** sum_ofshift, vector<staff> workers,int Cantidad_empleado
 
             
         }
-        if(suma > workers[i].MaxTotalMinutes )
-            {                   
-                score =score - 10;
+        if(suma > workers[i].MaxTotalMinutes)
+            { 
+                //TAGcout<<"trabajador :" << i << " total sobre trabajo: " <<suma <<" \n";                     
+                score =score - 10 ;
                 
             }
         if(suma < workers[i].MinTotalMinutes ){ //.MaxTotalMinutes[turno-1]
 
                 
-                
-                score -=10;
+                //TAGcout<<"trabajador :" << i << " total under trabajo: " <<suma <<" \n";  
+                score =score - 10 ;
                 
             }
     }
@@ -448,6 +452,7 @@ int maxConsecutiveShifts(int** MATRIX,vector<staff> workers,int Cantidad_emplead
             if(MATRIX[i][j] != 0 ){
                 aux++;
                 if(aux > workers[i].MaxConsecutiveShifts){
+                    //cout<<"trabaja muchos turnos consecutivos\n";
                     score -=10;
                 }
             }else{
@@ -470,7 +475,8 @@ int minConsecutiveShifts(int** MATRIX,vector<staff> workers,int Cantidad_emplead
                 aux++;
                 if(aux > workers[i].MinConsecutiveShifts)
                 {
-                    score -=10;
+                    //cout<<"trabajador " << i << " pocos turnos consecutivos\n";
+                    score -=80;
                 }
             }else{
                 aux = 0;
@@ -484,25 +490,32 @@ int MaxConsecutiveWeekendWork(int** MATRIX,vector<staff> workers,int Cantidad_em
     int index = 5;
     int score = 0;
     int* sumOfWeekends = new int[Cantidad_empleados];
+    for(int i = 0; i<Cantidad_empleados; i++){
+        sumOfWeekends[i] = 0;
+    }
     while(index<SECTION_HORIZON)
     {
         for(int i = 0 ; i<Cantidad_empleados;i++)
         {
             if(MATRIX[i][index] != 0 || MATRIX[i][index + 1] != 0)
-            {
+            {   
+                
                 sumOfWeekends[i] = sumOfWeekends[i] + 1;
+                
                 
             }
         }
-        for(int i = 0 ; i<Cantidad_empleados;i++)
+        
+        index+=7;
+    }
+    for(int i = 0 ; i<Cantidad_empleados;i++)
         {
             if(sumOfWeekends[i]>workers[i].MaxWeekends)
                     {
-                        score-=10;
+                        //cout<<i << " "<< index << " " << sumOfWeekends[i]  <<" dia trabajado\n";
+                        score-=100*(sumOfWeekends[i]);
                     }
         }
-        index+=5;
-    }
     return score;
 
 }
@@ -514,9 +527,8 @@ int MustDayoff(int** MATRIX, vector<days_off> libres,int Cantidad_empleados,int 
            for(int w = 0 ; w<libres[i].DayIndexes.size(); w++){
                int aux = stoi(libres[i].DayIndexes[w]);
                if(MATRIX[i][j] != 0 && j == aux){
-                
-                   score-=10;
-
+                   //cout<<"Empleado : "<<i <<" trabaja en dias libres\n";
+                   score-=1000;
                }
            }
             
@@ -528,17 +540,27 @@ int MustDayoff(int** MATRIX, vector<days_off> libres,int Cantidad_empleados,int 
 int CantFollowRestriction(int** MATRIX,vector<shift> turnos,int Cantidad_empleados,int SECTION_HORIZON ){
     int score = 0;
     for(int i = 0; i<Cantidad_empleados ; i++){
-        for(int j = 1; j<SECTION_HORIZON ; j++){
+        for(int j = 0; j<SECTION_HORIZON -1 ; j++){
             int presente = MATRIX[i][j] ;
-            int pasado = MATRIX[i][j-1] ;
+            int futuro = MATRIX[i][j+1] ;
             
-            if(pasado != 0 && presente !=0){
+            if(futuro != 0 && presente !=0){
                 for(int w = 0; w<turnos[presente-1].cant_follow.size(); w++){
-                        if(turnos[presente-1].cant_follow[w] == turnos[pasado-1].ShiftID){
-                            
-                            score -=10;
+                    string a = turnos[presente-1].cant_follow[w];
+                    if(a.compare("\n") != 3){
+                    
+                    //cout<<a.compare("\n")<<"\n";
+                    //cout<<turnos[presente-1].cant_follow[w][0];
+                    //cout<<turnos[futuro-1].ShiftID<<"\n";
+                    
+                    //cout<<turnos[presente-1].cant_follow[w].compare(turnos[futuro-1].ShiftID);
+                    
+                    if(turnos[futuro-1].ShiftID[0] == turnos[presente-1].cant_follow[w][0] ){
+                            //cout<<"Presente " << presente<< " " <<i << " " << j <<" no puede ser seguido por :" << turnos[futuro-1].ShiftID[0]<<"\n";
+                            score -=100;
                         }
                     }
+                }
             }
         }
     }
@@ -546,10 +568,10 @@ int CantFollowRestriction(int** MATRIX,vector<shift> turnos,int Cantidad_emplead
     return score;
 }
 
-void copyMatrix(int** MATRIX, int** aux_matrix,int Cantidad_empleados,int SECTION_HORIZON){
+void copyMatrix(int** Original, int** copia,int Cantidad_empleados,int SECTION_HORIZON){
     for(int i = 0; i<Cantidad_empleados ; i++){
         for(int j = 0; j<SECTION_HORIZON ; j++){
-            aux_matrix[i][j] = MATRIX[i][j];
+            copia[i][j] = Original[i][j];
             
             }
     }
@@ -564,8 +586,53 @@ void emptySumOfShift(int** sum_ofshift,int Cantidad_empleados,int turnos_max){
     }
 }
 
+double Acceptance(double score_actual, double score_pasado,double T,double EulerConstant){
+
+    if(score_actual > score_pasado){
+        
+        return 1;
+    }else if(score_actual == score_pasado){
+        return -1;
+    }
+    
+    else{
+        double EulerConstant = 2.718281828459045235;
+        //cout<<EulerConstant<<  " Base \n";
+        
+        double exponent = (score_actual - score_pasado)/T;
+        //cout<<exponent<<  " Exponente " << T << " : Temperatura\n";
+        return pow(EulerConstant,exponent);
+    }
+     
+}
+
+void bestSolutionPrint(int** MATRIX,int Cantidad_empleados,int SECTION_HORIZON,vector<staff> workers,vector<shift> turnos){
+
+    for(int i = 0 ; i<Cantidad_empleados; i++){
+        for(int j = 0; j<SECTION_HORIZON ; j++){
+            int t = MATRIX[i][j];
+            if(t !=0){
+
+                string shiftId = turnos[t-1].ShiftID;
+                if(j == 0){
+                    cout<<"\n"<<workers[i].ID << ":"<<" (" << j << "," << shiftId << ")"; 
+                }
+                if(j + 1 ==SECTION_HORIZON){
+                    cout<<" (" << j << "," << shiftId << ")"; 
+                }else{
+                    cout<<" (" << j << "," << shiftId << ")"; 
+                }
+                
+            }
+            
+        }
+    }
+
+}
+
 int main()
 {
+    srand((unsigned)(time(0)));
     bool copiar = false;
     int flags = 0;
     prueba.insert(prueba.begin(),2);
@@ -575,7 +642,7 @@ int main()
     workers.push_back(new staff());
     */
     ifstream fileStream;
-    fileStream.open("nsp_instancias/instances1_24/Instance1.txt");
+    fileStream.open("nsp_instancias/instances1_24/Instance2.txt");
     if(fileStream.is_open())
     {
 
@@ -690,10 +757,12 @@ int main()
     int** ShiftsPerWorker  = new int*[Cantidad_empleados];
     int** sum_ofshift      = new int*[Cantidad_empleados];
     int** aux_matrix       = new int*[Cantidad_empleados];
+    int** movimiento       = new int*[Cantidad_empleados];
     for(int i=0; i<Cantidad_empleados; i++)
     {
         MATRIX[i]          = new int[SECTION_HORIZON];
-        aux_matrix[i]      = new int[SECTION_HORIZON]; 
+        aux_matrix[i]      = new int[SECTION_HORIZON];
+        movimiento[i]      = new int[SECTION_HORIZON]; 
         ShiftsPerWorker[i] = new int[turnos_max + 1];//turnos_max es cantidad de turnos sin contar el turno 0->no trabaja
         sum_ofshift[i]     = new int[turnos_max + 1];
     }
@@ -704,7 +773,7 @@ int main()
     initShiftPerWorker(ShiftsPerWorker,Cantidad_empleados,turnos_max + 1);
 
     // se define score inicial
-    int score_final = -1*pow(10,5);
+    double score_final = -1*pow(10,5);
         //re inicializar en cada iteracion
         //while(iterations < MaxIterations)
    
@@ -712,13 +781,7 @@ int main()
     //Se copia la matriz de decision
     
     copyMatrix(MATRIX,aux_matrix,Cantidad_empleados,SECTION_HORIZON);
-    int score = 0;
-    int iterations = 100;
-    int i= 0;
-
-   
-    cout<<"\n";
-
+    double score = 0;
     score = 0;
     score +=sumOfShift(MATRIX,sum_ofshift,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON,turnos_max + 1,workers);
     score +=ShiftTimesSum(sum_ofshift,workers,Cantidad_empleados,turnos_max + 1,turnos);
@@ -728,26 +791,36 @@ int main()
     score +=MustDayoff(MATRIX,libres,Cantidad_empleados,SECTION_HORIZON);
     score +=CantFollowRestriction(MATRIX,turnos,Cantidad_empleados,SECTION_HORIZON);
 
-    cout<<score<< " SCORE SECUNDAL \n";
+   
 
     emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
-
-    score_final = score;
-    while(i < iterations){
+    double T                   = abs(score) * 10;
+    double Reset_T             = abs(score) * 10;
+    int Reset_max              = 0;
+    int Tol                    = 5;
+    double alpha               = 0.99;
+    double EulerConstant = 2.718281828459045235;
+    double iterations     = 1000;
+    double index              = 0;
+    score_final        = score;
+    int estancado      = 1;
+    int iter_estancado = iterations/8;
+    double score_pasado;
+    while(index < iterations){
         bool flag = true;
+        //cout<< "De vuelta a iterar\n";
         for(int i = 0; i<Cantidad_empleados; i++){
             if(flag){
                 for(int j = 0 ; j<SECTION_HORIZON ; j++){
-                    int turno = aux_matrix[i][j];
+                    int turno = aux_matrix[i][j];                    
                     if(flag){
                         
                         for(int w = 0; w<turnos.size() +1;w++){
-            
+                            
                             if(turno != w){
                                 aux_matrix[i][j] = w;
                             }
                             score = 0;
-                            
                             score +=sumOfShift(aux_matrix,sum_ofshift,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON,turnos_max + 1,workers);                        
                             score +=ShiftTimesSum(sum_ofshift,workers,Cantidad_empleados,turnos_max + 1,turnos);
                             score +=maxConsecutiveShifts(aux_matrix,workers,Cantidad_empleados,SECTION_HORIZON);
@@ -756,25 +829,44 @@ int main()
                             score +=MustDayoff(aux_matrix,libres,Cantidad_empleados,SECTION_HORIZON);
                             score +=CantFollowRestriction(aux_matrix,turnos,Cantidad_empleados,SECTION_HORIZON);
                             
-                            emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
+                            unsigned seed = chrono::steady_clock::now().time_since_epoch().count();
+                            default_random_engine e(seed);
+                            uniform_real_distribution<double> distR(0,1);
+                            double eval = pow(EulerConstant,(abs(score_pasado-score_pasado))/T);
+                            double p = distR(e);
                             
-                            if(score>score_final){
+                            emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
+                            emptySumOfShift(sum_ofshift,Cantidad_empleados,turnos_max);
+                            //cout<<"EVAL : "<<eval<<" P : "<< p<<"\n";
+                            //cout<<"Acceptance : " <<pow(EulerConstant,abs(score - score_pasado)/T)<<"\n";
+                            //cout << score << " " << score_pasado << "\n";
+                            //cout<< T <<" Temperature \n";
+                            //cout<<"Acceptance : " << Acceptance(score,score_pasado,EulerConstant,T)<<"\n";
+                            double Accept =  Acceptance(score,score_final,T,EulerConstant);
+                            //cout<<"Score actual : "<<score<< " Mejor Score : " << score_final<<"\n";
+                            //cout<<Accept<<"\n";
+                            cout<<"Score actual : " <<score<< " Mejor Score : "<<score_final << " Estancado : " << estancado <<"\n";
+                            score_pasado  = score;
+                            
+                            if( score >  score_final){
+                                estancado = 0;
                                 score_final = score;
                             
-                                flag = false; //alguna mejora
+                                flag = false; //alguna mejora, cambio de vecindario
                                 copyMatrix(aux_matrix,MATRIX,Cantidad_empleados,SECTION_HORIZON);
-                                for(int i  = 0; i<Cantidad_empleados; i++){
-                                    for(int j = 0; j<SECTION_HORIZON;j ++){
-                                        if(j + 1 ==SECTION_HORIZON){
-                                            cout<<aux_matrix[i][j]<< " \n";
-                                        }else{
-                                            cout<<aux_matrix[i][j]<< " ";
-                                        }
-                                    }
-                                }
-                                //copy(&aux_matrix[0][0], &aux_matrix[0][0]+Cantidad_empleados*SECTION_HORIZON,&MATRIX[0][0]);
+                                
                                 cout<<"Score total: "<< score_final <<"\n";
-                            }else{
+                               
+                                break;
+                               
+                            }else if(p<Accept && Accept != -1)
+                            {
+                                
+                                //cout<<"Se acepta un movimiento peor\n";
+                                flag = false;
+                                break;
+                            }
+                            else{
                                 
                                 aux_matrix[i][j] = turno;
                             }
@@ -788,6 +880,54 @@ int main()
                 break;
             }
         }
-        i++;
+        if(score_final == 0){
+            break;
+        }
+        if(Reset_max >Tol){
+            break;
+        }
+        if(score <=score_final){
+            
+            
+            estancado +=1;
+        }
+        if(estancado > iter_estancado){
+            cout<<estancado <<" estancado \n";
+            Reset_max +=1;
+            index = 0;
+            T = Reset_T;
+            estancado = 0;
+        }
+        //cout<<score<<"\n";
+        T = T*(1 -(index+1)/iterations);
+        //cout<<  1 -(index+1)/iterations <<" Temperature \n";
+        //cout<<
+        //cout<< T  << "\n";
+        //cout<<"Acceptance : " << Acceptance(-500,-300,EulerConstant,T)<<"\n";
+        index++;
     }
+    cout<<score_final<<"\n";
+    for(int i  = 0; i<Cantidad_empleados; i++){
+        for(int j = 0; j<SECTION_HORIZON;j ++){
+            if(j + 1 ==SECTION_HORIZON){
+                cout<<MATRIX[i][j]<< " \n";
+            }else{
+                cout<<MATRIX[i][j]<< " ";
+            }
+        }
+    }
+    score= 0;
+    score +=sumOfShift(MATRIX,sum_ofshift,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON,turnos_max + 1,workers);                        
+    score +=ShiftTimesSum(sum_ofshift,workers,Cantidad_empleados,turnos_max + 1,turnos);
+    score +=maxConsecutiveShifts(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
+    score +=minConsecutiveShifts(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
+    score +=MaxConsecutiveWeekendWork(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
+    score +=MustDayoff(MATRIX,libres,Cantidad_empleados,SECTION_HORIZON);
+    score +=CantFollowRestriction(MATRIX,turnos,Cantidad_empleados,SECTION_HORIZON);
+
+    emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
+    emptySumOfShift(sum_ofshift,Cantidad_empleados,turnos_max);
+    cout<<score<<"\n";
+    bestSolutionPrint(MATRIX,Cantidad_empleados,SECTION_HORIZON,workers,turnos);
+    return 0 ;
 }   
