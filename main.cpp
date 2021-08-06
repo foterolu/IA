@@ -609,23 +609,38 @@ double Acceptance(double score_actual, double score_pasado,double T,double Euler
 void bestSolutionPrint(int** MATRIX,int Cantidad_empleados,int SECTION_HORIZON,vector<staff> workers,vector<shift> turnos){
 
     for(int i = 0 ; i<Cantidad_empleados; i++){
+        string line;
+        cout<<workers[i].ID << ":";
+        line.append(workers[i].ID);
+        line.append(":");
         for(int j = 0; j<SECTION_HORIZON ; j++){
             int t = MATRIX[i][j];
+             
             if(t !=0){
 
                 string shiftId = turnos[t-1].ShiftID;
-                if(j == 0){
-                    cout<<"\n"<<workers[i].ID << ":"; 
-                }
+                
                 if(j + 1 ==SECTION_HORIZON){
                     cout<<" (" << j << "," << shiftId << ")"; 
+                    line.append(" (");
+                    line.append(j);
+                    line.append(",");
+                    line.append(shiftId );
+                    line.append(")");
+
                 }else{
-                    cout<<" (" << j << "," << shiftId << ")"; 
+                    cout<<" (" << j << "," << shiftId << ")";
+                    line.append(" (");
+                    line.append(j);
+                    line.append(",");
+                    line.append(shiftId );
+                    line.append(")");
                 }
                 
             }
             
         }
+        cout<<"\n";
     }
 
 }
@@ -642,7 +657,9 @@ int main()
     workers.push_back(new staff());
     */
     ifstream fileStream;
-    fileStream.open("nsp_instancias/instances1_24/Instance1.txt");
+    string route = "nsp_instancias/instances1_24/";
+    route.append("Instance1.txt");
+    fileStream.open(route);
     if(fileStream.is_open())
     {
 
@@ -795,7 +812,7 @@ int main()
     int Tol                    = 15;
     double alpha               = 0.99;
     double EulerConstant = 2.718281828459045235;
-    double iterations     = 1000;
+    double iterations         = 1000;
     double index              = 0;
     score_final        = score;
     int estancado      = 1;
@@ -803,7 +820,7 @@ int main()
     double score_pasado;
     int i = 0;
     int  j = 0 ;
-    double Maximo;
+    double Maximo= -1*pow(10,5);
     while(index < iterations){
         bool flag = true;
         //cout<< "De vuelta a iterar\n";
@@ -836,14 +853,9 @@ int main()
                             
                             emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
                             emptySumOfShift(sum_ofshift,Cantidad_empleados,turnos_max);
-                            //cout<<"EVAL : "<<eval<<" P : "<< p<<"\n";
-                            //cout<<"Acceptance : " <<pow(EulerConstant,abs(score - score_pasado)/T)<<"\n";
-                            //cout << score << " " << score_pasado << "\n";
-                            //cout<< T <<" Temperature \n";
-                            //cout<<"Acceptance : " << Acceptance(score,score_pasado,EulerConstant,T)<<"\n";
+                      
                             double Accept =  Acceptance(score,score_final,T,EulerConstant);
-                            //cout<<"Score actual : "<<score<< " Mejor Score : " << score_final<<"\n";
-                            //cout<<Accept<<"\n";
+                            
                             cout<<"Score actual : " <<score<< " Mejor Score : "<<score_final << " Estancado : " << estancado <<"\n";
                             score_pasado  = score;
                             
@@ -881,6 +893,7 @@ int main()
         }
         if(score_final == 0){
             copyMatrix(MATRIX,movimiento,Cantidad_empleados,SECTION_HORIZON);
+            Maximo = score_final;
             break;
         }
         
@@ -892,36 +905,35 @@ int main()
         if(estancado > iter_estancado){
             cout<<estancado <<" estancado \n";
             Reset_max +=1;
-            Maximo = score_final;
-            score_final = -1*pow(10,5);
+            
+            
             cout<<score_final;
             
             //index = 0;
             T = Reset_T;
             estancado = 0;
             if(Maximo < score_final){
+                Maximo = score_final;
                 copyMatrix(MATRIX,movimiento,Cantidad_empleados,SECTION_HORIZON);
             }
             
+            score_final = -1*pow(10,5);
             initMatrix(aux_matrix,Cantidad_empleados,SECTION_HORIZON,turnos_max);
             
          
         }
-        //cout<<score<<"\n";
+
         T = T*(1 -(index+1)/iterations);
-        //cout<<  1 -(index+1)/iterations <<" Temperature \n";
-        //cout<<
-        //cout<< T  << "\n";
-        //cout<<"Acceptance : " << Acceptance(-500,-300,EulerConstant,T)<<"\n";
         index++;
     }
     cout<<score_final<<"\n";
+    cout<<Maximo<<"\n";
     for(int i  = 0; i<Cantidad_empleados; i++){
         for(int j = 0; j<SECTION_HORIZON;j ++){
             if(j + 1 ==SECTION_HORIZON){
-                cout<<MATRIX[i][j]<< " \n";
+                cout<<movimiento[i][j]<< " \n";
             }else{
-                cout<<MATRIX[i][j]<< " ";
+                cout<<movimiento[i][j]<< " ";
             }
         }
     }
