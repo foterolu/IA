@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 #include <chrono>
+#include <bits/stdc++.h>
 using namespace std;
 
 
@@ -21,10 +22,12 @@ struct staff{
 
 };
 
+//------------------Estructuras de datos----------------------//
+
 struct shift{
     string ShiftID;
     int mins;
-    vector <string> cant_follow; //se debe parsear;
+    vector <string> cant_follow;
 };
 
 struct days_off{
@@ -60,7 +63,7 @@ struct cover
 
 
 
-//Flags to parse .txt
+// -----------------------------Flags to parse .txt-----------------------------------------//
 string sections[7] = {"SECTION_HORIZON",
                     "SECTION_SHIFTS",
                     "SECTION_STAFF",
@@ -79,16 +82,19 @@ bool flag[7] = {false,
 
     
 
-//Variables Globales
+//-----------------------------Variables Globales-----------------------------------------//
 
 int SECTION_HORIZON = 0;
-vector<staff> workers;
-vector<shift> turnos;
-vector<days_off> libres;
-vector<shift_on_request> on_request;
-vector<shift_off_request> off_request;
-vector<cover> cubrir;
+vector<staff> workers; //Informacion de empleadps
+vector<shift> turnos; //Informacion de turnos
+vector<days_off> libres; //Informacion de dias libres requeridos
+vector<shift_on_request> on_request; //Informacion de turnos solicitados
+vector<shift_off_request> off_request; //Informacion de dia libre solicitados
+vector<cover> cubrir; //Informacion de penalizacion de turnos por
 vector<int> prueba;
+
+
+//---------------------------Codigo necesario para parsear texto---------------------------//
 
 void tokenize(string s, string del = " ")
 {
@@ -343,6 +349,8 @@ void addCover(cover* section,string s, string del = "")
     cubrir.push_back(*section);
 }
 
+
+//-------------------------Inicializacion de matriz con numeros aleatorios---------------------------//
 int random_num(int start, int end) 
 {
     int range = (end - start) + 1;
@@ -375,6 +383,11 @@ void initShiftPerWorker(int** ShiftsPerWorker , int Cantidad_empleados,int turno
     }
 
 }
+
+
+//------------------------------Restricciones duras----------------------------------------------------------//
+
+
 
 int sumOfShift(int** MATRIX, int** sum_ofshift,int** ShiftsPerWorker,int cantidad_empleados, int SECTION_HORIZON,int turnos_max,vector<staff> shifts)
 {
@@ -429,14 +442,14 @@ int ShiftTimesSum(int** sum_ofshift, vector<staff> workers,int Cantidad_empleado
         }
         if(suma > workers[i].MaxTotalMinutes)
             { 
-                //TAGcout<<"trabajador :" << i << " total sobre trabajo: " <<suma <<" \n";                     
+                                 
                 score =score - 10 ;
                 
             }
         if(suma < workers[i].MinTotalMinutes ){ //.MaxTotalMinutes[turno-1]
 
                 
-                //TAGcout<<"trabajador :" << i << " total under trabajo: " <<suma <<" \n";  
+               
                 score =score - 10 ;
                 
             }
@@ -452,7 +465,7 @@ int maxConsecutiveShifts(int** MATRIX,vector<staff> workers,int Cantidad_emplead
             if(MATRIX[i][j] != 0 ){
                 aux++;
                 if(aux > workers[i].MaxConsecutiveShifts){
-                    //cout<<"trabaja muchos turnos consecutivos\n";
+                
                     score -=10;
                 }
             }else{
@@ -475,7 +488,6 @@ int minConsecutiveShifts(int** MATRIX,vector<staff> workers,int Cantidad_emplead
                 aux++;
                 if(aux > workers[i].MinConsecutiveShifts)
                 {
-                    //cout<<"trabajador " << i << " pocos turnos consecutivos\n";
                     score -=80;
                 }
             }else{
@@ -512,7 +524,7 @@ int MaxConsecutiveWeekendWork(int** MATRIX,vector<staff> workers,int Cantidad_em
         {
             if(sumOfWeekends[i]>workers[i].MaxWeekends)
                     {
-                        //cout<<i << " "<< index << " " << sumOfWeekends[i]  <<" dia trabajado\n";
+                        
                         score-=100*(sumOfWeekends[i]);
                     }
         }
@@ -527,7 +539,6 @@ int MustDayoff(int** MATRIX, vector<days_off> libres,int Cantidad_empleados,int 
            for(int w = 0 ; w<libres[i].DayIndexes.size(); w++){
                int aux = stoi(libres[i].DayIndexes[w]);
                if(MATRIX[i][j] != 0 && j == aux){
-                   //cout<<"Empleado : "<<i <<" trabaja en dias libres\n";
                    score-=1000;
                }
            }
@@ -549,14 +560,10 @@ int CantFollowRestriction(int** MATRIX,vector<shift> turnos,int Cantidad_emplead
                     string a = turnos[presente-1].cant_follow[w];
                     if(a.compare("\n") != 3){
                     
-                    //cout<<a.compare("\n")<<"\n";
-                    //cout<<turnos[presente-1].cant_follow[w][0];
-                    //cout<<turnos[futuro-1].ShiftID<<"\n";
-                    
-                    //cout<<turnos[presente-1].cant_follow[w].compare(turnos[futuro-1].ShiftID);
+                   
                     
                     if(turnos[futuro-1].ShiftID[0] == turnos[presente-1].cant_follow[w][0] ){
-                            //cout<<"Presente " << presente<< " " <<i << " " << j <<" no puede ser seguido por :" << turnos[futuro-1].ShiftID[0]<<"\n";
+                            
                             score -=100;
                         }
                     }
@@ -567,6 +574,108 @@ int CantFollowRestriction(int** MATRIX,vector<shift> turnos,int Cantidad_emplead
 
     return score;
 }
+
+//------------------------------Restricciones blandas-------------------------------------//
+
+int ShiftOnRequest( int** MATRIX,int Cantidad_empleados, int SECTION_HORIZON,vector<shift_on_request> on_request,vector<staff> workers,vector<shift> turnos){
+    int onRequest = on_request.size();
+    int score = 0;
+    for(int i = 0; i<onRequest ; i++){
+        string id = on_request[i].EmployeeID;
+        string onTurno = on_request[i].ShiftID;
+        int row = 0;
+        for(int w = 0; w <workers.size(); w++){
+            
+            if(workers[w].ID[0] == id[0]){
+                row = w;
+            
+                int turno = MATRIX[row][on_request[i].Day];
+                if(turno != 0){
+                    
+                    //cout << turnos[turno-1].ShiftID.compare(on_request[i].ShiftID) << "\n";
+                    if(turnos[turno-1].ShiftID.compare(on_request[i].ShiftID) == 0){
+                            score += on_request[i].Weight;
+                    }
+
+                }
+                
+            }
+        }
+        
+    }
+    return score;
+}
+
+
+int ShiftOffRequest( int** MATRIX,int Cantidad_empleados, int SECTION_HORIZON,vector<shift_off_request> off_request,vector<staff> workers,vector<shift> turnos){
+    int offRequest = off_request.size();
+    int score = 0;
+    for(int i = 0; i<offRequest ; i++){
+        string id = off_request[i].EmployeeID;
+        int row = 0;
+        for(int w = 0; w <workers.size(); w++){
+            
+            if(workers[w].ID[0] == id[0]){
+                row = w;
+                int turno = MATRIX[row][off_request[i].Day];
+                if(turno != 0){
+                    //cout << turnos[turno-1].ShiftID.compare(on_request[i].ShiftID) << "\n";
+                    if(turnos[turno-1].ShiftID.compare(off_request[i].ShiftID) ==0){
+                            score += off_request[i].Weight;
+                    }
+
+                }
+                
+            }
+        }
+        
+    }
+    return score;
+}
+
+int SectionCover(int** MATRIX , vector<cover> cubrir,vector<shift> turnos ,int Cantidad_empleados, int SECTION_HORIZON){
+    int maxCover = cubrir.size();
+    int score = 0;
+
+
+    for(int  i = 0; i< maxCover ; i++){
+        int column = cubrir[i].Day;
+        string shiftId = cubrir[i].ShiftID;
+        int requisito = cubrir[i].Requirement;
+
+        for(int w = 0; w <turnos.size(); w++){
+            if(turnos[w].ShiftID[0] == shiftId [0]){
+                int count = 0;
+                //cout << turnos[w].ShiftID[0] << "\n";
+                //cout << shiftId[0] << "\n";
+                for(int row = 0 ; row<Cantidad_empleados ; row++){
+                    int aux  = MATRIX[row][column];
+
+                    if(aux == w+1){
+                        count +=1;
+                    }
+                }
+
+            if(count > requisito){
+                score += (count - requisito )*cubrir[i].Weight_for_over;
+                }
+            else if(count < requisito){
+                score += (requisito - count )*cubrir[i].Weight_for_under;
+                }
+
+            break;
+
+            }
+        }
+
+    }
+
+    return score;
+}
+
+//-------------------------------Funciones auxiliares------------------------------------//
+
+
 
 void copyMatrix(int** Original, int** copia,int Cantidad_empleados,int SECTION_HORIZON){
     for(int i = 0; i<Cantidad_empleados ; i++){
@@ -606,10 +715,10 @@ double Acceptance(double score_actual, double score_pasado,double T,double Euler
      
 }
 
-void bestSolutionPrint(int** MATRIX,int Cantidad_empleados,int SECTION_HORIZON,vector<staff> workers,vector<shift> turnos){
-
+string bestSolutionPrint(int** MATRIX,int Cantidad_empleados,int SECTION_HORIZON,vector<staff> workers,vector<shift> turnos){
+    string line;
     for(int i = 0 ; i<Cantidad_empleados; i++){
-        string line;
+        
         cout<<workers[i].ID << ":";
         line.append(workers[i].ID);
         line.append(":");
@@ -621,31 +730,36 @@ void bestSolutionPrint(int** MATRIX,int Cantidad_empleados,int SECTION_HORIZON,v
                 string shiftId = turnos[t-1].ShiftID;
                 
                 if(j + 1 ==SECTION_HORIZON){
-                    cout<<" (" << j << "," << shiftId << ")"; 
+                    cout<<" (" << j << "," << shiftId << ")";
+                    
                     line.append(" (");
-                    line.append(j);
+                    line.append(to_string(j));
                     line.append(",");
                     line.append(shiftId );
                     line.append(")");
 
                 }else{
                     cout<<" (" << j << "," << shiftId << ")";
+                    
                     line.append(" (");
-                    line.append(j);
+                    line.append(to_string(j));
                     line.append(",");
                     line.append(shiftId );
                     line.append(")");
+                
                 }
                 
             }
             
         }
+        line.append("\n");
         cout<<"\n";
     }
+    return line;
 
 }
 
-int main()
+int main(int argc, char **argv)
 {
     srand((unsigned)(time(0)));
     bool copiar = false;
@@ -657,8 +771,10 @@ int main()
     workers.push_back(new staff());
     */
     ifstream fileStream;
+    string instance = argv[1];
     string route = "nsp_instancias/instances1_24/";
-    route.append("Instance1.txt");
+    cout<<*argv;
+    route.append(instance);
     fileStream.open(route);
     if(fileStream.is_open())
     {
@@ -812,7 +928,7 @@ int main()
     int Tol                    = 15;
     double alpha               = 0.99;
     double EulerConstant = 2.718281828459045235;
-    double iterations         = 1000;
+    double iterations         = stoi(argv[2]);
     double index              = 0;
     score_final        = score;
     int estancado      = 1;
@@ -821,6 +937,10 @@ int main()
     int i = 0;
     int  j = 0 ;
     double Maximo= -1*pow(10,5);
+
+    time_t start, end;
+    time(&start);
+    time(&start);
     while(index < iterations){
         bool flag = true;
         //cout<< "De vuelta a iterar\n";
@@ -926,6 +1046,13 @@ int main()
         T = T*(1 -(index+1)/iterations);
         index++;
     }
+    
+    time(&end);
+
+    double time_taken = double(end - start);
+    setprecision(5);
+
+
     cout<<score_final<<"\n";
     cout<<Maximo<<"\n";
     for(int i  = 0; i<Cantidad_empleados; i++){
@@ -948,11 +1075,37 @@ int main()
 
     emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
     emptySumOfShift(sum_ofshift,Cantidad_empleados,turnos_max);
-    cout<<score<<"\n";
-    bestSolutionPrint(movimiento,Cantidad_empleados,SECTION_HORIZON,workers,turnos);
 
-    //--------------------------------------------------------------------------------------------------------------------------------//
-    
+
+    int fitness = 0;
+    fitness +=ShiftOnRequest(MATRIX,Cantidad_empleados,SECTION_HORIZON,on_request,workers,turnos);
+    fitness +=ShiftOffRequest(MATRIX,Cantidad_empleados,SECTION_HORIZON,off_request,workers,turnos);
+    fitness +=SectionCover(MATRIX ,cubrir, turnos ,Cantidad_empleados,  SECTION_HORIZON);
+    cout<<score<<"\n";
+    cout<<fitness << " Fitness \n";
+    string OutPutLine = bestSolutionPrint(movimiento,Cantidad_empleados,SECTION_HORIZON,workers,turnos);
+
+    //--------------------------------------------------Escribir Archivo de salida-------------------------------------------------------------//
+
+    OutPutLine.append("Suma de penalizaciones : ");
+    OutPutLine.append(to_string(fitness));
+    OutPutLine.append("\n");
+
+    OutPutLine.append("Factible ? : ");
+    if(Maximo == 0){
+        OutPutLine.append("Si\n");
+    }
+    else{
+        OutPutLine.append("No\n");
+    }
+
+    OutPutLine.append("Timepo total de ejecucion: ");
+    OutPutLine.append(to_string(time_taken));
+    OutPutLine.append("[s]\n");
+    string outFile = "./instancias_solucion/";
+    outFile.append(instance);
+    ofstream outdata(outFile);
+    outdata << OutPutLine;
 
     return 0 ;
 }   
