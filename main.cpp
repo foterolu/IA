@@ -615,7 +615,7 @@ void bestSolutionPrint(int** MATRIX,int Cantidad_empleados,int SECTION_HORIZON,v
 
                 string shiftId = turnos[t-1].ShiftID;
                 if(j == 0){
-                    cout<<"\n"<<workers[i].ID << ":"<<" (" << j << "," << shiftId << ")"; 
+                    cout<<"\n"<<workers[i].ID << ":"; 
                 }
                 if(j + 1 ==SECTION_HORIZON){
                     cout<<" (" << j << "," << shiftId << ")"; 
@@ -642,7 +642,7 @@ int main()
     workers.push_back(new staff());
     */
     ifstream fileStream;
-    fileStream.open("nsp_instancias/instances1_24/Instance2.txt");
+    fileStream.open("nsp_instancias/instances1_24/Instance1.txt");
     if(fileStream.is_open())
     {
 
@@ -772,14 +772,7 @@ int main()
     //se inicializa la matriz de cantidad de turnos
     initShiftPerWorker(ShiftsPerWorker,Cantidad_empleados,turnos_max + 1);
 
-    // se define score inicial
-    double score_final = -1*pow(10,5);
-        //re inicializar en cada iteracion
-        //while(iterations < MaxIterations)
-   
-   
-    //Se copia la matriz de decision
-    
+
     copyMatrix(MATRIX,aux_matrix,Cantidad_empleados,SECTION_HORIZON);
     double score = 0;
     score = 0;
@@ -794,24 +787,30 @@ int main()
    
 
     emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
+    double score_final = -1*pow(10,5);
+    double mejor_score = -1*pow(10,5);
     double T                   = abs(score) * 10;
     double Reset_T             = abs(score) * 10;
     int Reset_max              = 0;
-    int Tol                    = 5;
+    int Tol                    = 15;
     double alpha               = 0.99;
     double EulerConstant = 2.718281828459045235;
     double iterations     = 1000;
     double index              = 0;
     score_final        = score;
     int estancado      = 1;
-    int iter_estancado = iterations/8;
+    int iter_estancado = iterations/5;
     double score_pasado;
+    int i = 0;
+    int  j = 0 ;
+    double Maximo;
     while(index < iterations){
         bool flag = true;
         //cout<< "De vuelta a iterar\n";
+        
         for(int i = 0; i<Cantidad_empleados; i++){
             if(flag){
-                for(int j = 0 ; j<SECTION_HORIZON ; j++){
+                for( int  j = 0 ;j<SECTION_HORIZON ; j++){
                     int turno = aux_matrix[i][j];                    
                     if(flag){
                         
@@ -881,11 +880,10 @@ int main()
             }
         }
         if(score_final == 0){
+            copyMatrix(MATRIX,movimiento,Cantidad_empleados,SECTION_HORIZON);
             break;
         }
-        if(Reset_max >Tol){
-            break;
-        }
+        
         if(score <=score_final){
             
             
@@ -894,9 +892,20 @@ int main()
         if(estancado > iter_estancado){
             cout<<estancado <<" estancado \n";
             Reset_max +=1;
-            index = 0;
+            Maximo = score_final;
+            score_final = -1*pow(10,5);
+            cout<<score_final;
+            
+            //index = 0;
             T = Reset_T;
             estancado = 0;
+            if(Maximo < score_final){
+                copyMatrix(MATRIX,movimiento,Cantidad_empleados,SECTION_HORIZON);
+            }
+            
+            initMatrix(aux_matrix,Cantidad_empleados,SECTION_HORIZON,turnos_max);
+            
+         
         }
         //cout<<score<<"\n";
         T = T*(1 -(index+1)/iterations);
@@ -917,17 +926,21 @@ int main()
         }
     }
     score= 0;
-    score +=sumOfShift(MATRIX,sum_ofshift,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON,turnos_max + 1,workers);                        
+    score +=sumOfShift(movimiento,sum_ofshift,ShiftsPerWorker,Cantidad_empleados,SECTION_HORIZON,turnos_max + 1,workers);                        
     score +=ShiftTimesSum(sum_ofshift,workers,Cantidad_empleados,turnos_max + 1,turnos);
-    score +=maxConsecutiveShifts(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
-    score +=minConsecutiveShifts(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
-    score +=MaxConsecutiveWeekendWork(MATRIX,workers,Cantidad_empleados,SECTION_HORIZON);
-    score +=MustDayoff(MATRIX,libres,Cantidad_empleados,SECTION_HORIZON);
-    score +=CantFollowRestriction(MATRIX,turnos,Cantidad_empleados,SECTION_HORIZON);
+    score +=maxConsecutiveShifts(movimiento,workers,Cantidad_empleados,SECTION_HORIZON);
+    score +=minConsecutiveShifts(movimiento,workers,Cantidad_empleados,SECTION_HORIZON);
+    score +=MaxConsecutiveWeekendWork(movimiento,workers,Cantidad_empleados,SECTION_HORIZON);
+    score +=MustDayoff(movimiento,libres,Cantidad_empleados,SECTION_HORIZON);
+    score +=CantFollowRestriction(movimiento,turnos,Cantidad_empleados,SECTION_HORIZON);
 
     emptySumOfShift(ShiftsPerWorker,Cantidad_empleados,turnos_max);
     emptySumOfShift(sum_ofshift,Cantidad_empleados,turnos_max);
     cout<<score<<"\n";
-    bestSolutionPrint(MATRIX,Cantidad_empleados,SECTION_HORIZON,workers,turnos);
+    bestSolutionPrint(movimiento,Cantidad_empleados,SECTION_HORIZON,workers,turnos);
+
+    //--------------------------------------------------------------------------------------------------------------------------------//
+    
+
     return 0 ;
 }   
